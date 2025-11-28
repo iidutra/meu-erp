@@ -1,0 +1,49 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Produtos{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">Produtos</h1>
+  <a href="{% url 'core:produto_create' %}" class="btn btn-primary">Novo produto</a>
+</div>
+
+<div class="card">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-striped mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Nome</th>
+            <th>Preço venda</th>
+            <th>Controla estoque</th>
+            <th>Estoque atual</th>
+            <th>Ativo</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for p in produtos %}
+          <tr>
+            <td>{{ p.nome }}</td>
+            <td>R$ {{ p.preco_venda }}</td>
+            <td>{{ p.controla_estoque|yesno:"Sim,Não" }}</td>
+            <td>{{ p.estoque_atual }}</td>
+            <td>{{ p.ativo|yesno:"Sim,Não" }}</td>
+            <td class="text-end">
+              <a href="{% url 'core:produto_update' p.pk %}" class="btn btn-sm btn-outline-secondary">
+                Editar
+              </a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="6" class="text-center">Nenhum produto cadastrado.</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

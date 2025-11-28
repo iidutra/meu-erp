@@ -1,0 +1,355 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Novo Orçamento{% endblock %}
+
+{% block content %}
+<h1 class="mb-3">Novo orçamento</h1>
+
+<form method="post" class="card p-3">
+  {% csrf_token %}
+
+  <h5 class="mb-2">Dados do orçamento</h5>
+  <p class="text-muted small">
+    Selecione a empresa, o cliente e, se quiser, uma validade para este orçamento.
+  </p>
+  <hr>
+
+  {% if form.non_field_errors %}
+  <div class="alert alert-danger">
+    {{ form.non_field_errors }}
+  </div>
+  {% endif %}
+
+  <div class="row mb-3">
+    <div class="col-md-6">
+      <label class="form-label">Empresa</label>
+      <input type="text" class="form-control" value="{{ request.user.perfil.empresa.nome_fantasia }}" disabled>
+    </div>
+    <div class="col-md-6">
+      {{ form.cliente.label_tag }}
+      {{ form.cliente }}
+    </div>
+  </div>
+
+  <div class="row mb-3">
+    <div class="col-md-3">
+      {{ form.validade.label_tag }}
+      {{ form.validade }}
+    </div>
+    <div class="col-md-3">
+      {{ form.status.label_tag }}
+      {{ form.status }}
+    </div>
+    {% if request.user.perfil.empresa.ramo == 'AUTO' %}
+    <div class="col-md-3">
+      {{ form.placa.label_tag }}
+      {{ form.placa }}
+    </div>
+    <div class="col-md-3">
+      {{ form.veiculo_descricao.label_tag }}
+      {{ form.veiculo_descricao }}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="mb-3">
+    {{ form.observacoes.label_tag }}
+    {{ form.observacoes }}
+  </div>
+
+
+  <div class="d-flex justify-content-between align-items-center mt-4 mb-2">
+    <div>
+      <h5 class="mb-0">Itens</h5>
+      <p class="text-muted small mb-0">
+        Escolha se o item é <strong>Produto</strong> ou <strong>Serviço</strong>. O campo não usado será desabilitado
+        automaticamente.
+      </p>
+    </div>
+    <button type="button" class="btn btn-sm btn-outline-primary" id="btn-add-item">
+      + Adicionar item
+    </button>
+  </div>
+  <hr>
+
+
+  {{ formset.management_form }}
+
+  <div class="table-responsive">
+    <table class="table table-sm align-middle">
+      <thead class="table-light">
+        <tr>
+          <th style="width: 40px;">#</th>
+          <th style="width: 130px;">Tipo</th>
+          <th>Produto</th>
+          <th>Serviço</th>
+          <th>Descrição</th>
+          <th style="width: 80px;" class="text-end">Qtd</th>
+          <th style="width: 120px;" class="text-end">Preço unit.</th>
+          <th style="width: 120px;" class="text-end">Total</th>
+          <th style="width: 70px;"></th> <!-- ações -->
+        </tr>
+      </thead>
+      <tbody>
+        {% for item_form in formset %}
+        <tr>
+          <td class="col-idx">{{ forloop.counter }}</td>
+          <td>
+            {{ item_form.tipo_item }}
+          </td>
+          <td class="td-produto">
+            {{ item_form.produto }}
+          </td>
+          <td class="td-servico">
+            {{ item_form.servico }}
+          </td>
+          <td>
+            {{ item_form.descricao }}
+          </td>
+          <td class="text-end">
+            {{ item_form.quantidade }}
+          </td>
+          <td class="text-end">
+            {{ item_form.preco_unitario }}
+          </td>
+          <td class="text-end">
+            {{ item_form.total }}
+          </td>
+          <td class="text-end">
+            <button type="button" class="btn btn-sm btn-outline-danger btn-remover-item">
+              ×
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="text-end fw-bold me-2 mb-2">
+    Total geral: R$ <span id="total-geral">0,00</span>
+  </div>
+
+  <div class="mt-3 d-flex justify-content-between">
+    <div class="text-muted small">
+      Os valores são recalculados automaticamente conforme você altera quantidade e preço.
+    </div>
+    <div>
+      <button type="submit" class="btn btn-primary">Salvar orçamento</button>
+      <a href="{% url 'core:orcamento_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+    </div>
+  </div>
+
+  <script>
+    function parseNumero(valor) {
+      if (!valor) return 0;
+      valor = valor.replace(',', '.');
+      const n = parseFloat(valor);
+      return isNaN(n) ? 0 : n;
+    }
+
+    function formatarMoeda(valor) {
+      // deixa no formato 60.00 para o Django aceitar
+      return valor.toFixed(2);
+    }
+    function adicionarLinhaItem() {
+      const tbody = document.querySelector('tbody');
+      const totalFormsInput = document.querySelector('input[name$="-TOTAL_FORMS"]');
+
+      if (!tbody || !totalFormsInput) return;
+
+      let totalForms = parseInt(totalFormsInput.value);
+      const lastIndex = totalForms - 1;
+      const lastRow = tbody.querySelector('tr:last-child');
+
+      if (!lastRow) return;
+
+      const newRow = lastRow.cloneNode(true);
+
+      // atualiza índices dos campos (-0- -> -1-, etc.)
+      const regex = new RegExp('-' + lastIndex + '-', 'g');
+      newRow.innerHTML = newRow.innerHTML.replace(regex, '-' + totalForms + '-');
+
+      // limpa valores
+      newRow.querySelectorAll('input').forEach(input => {
+        input.value = '';
+      });
+      newRow.querySelectorAll('select').forEach(select => {
+        select.selectedIndex = 0;
+      });
+
+      newRow.style.display = ''; // garante que apareça se o último foi escondido
+      tbody.appendChild(newRow);
+
+      // incrementa TOTAL_FORMS
+      totalFormsInput.value = totalForms + 1;
+
+      configurarEventosItens();
+      recalcularTotais();
+    }
+
+
+    document.addEventListener('DOMContentLoaded', function () {
+      configurarEventosItens();
+      recalcularTotais();
+
+      const btnAdd = document.getElementById('btn-add-item');
+      if (btnAdd) {
+        btnAdd.addEventListener('click', function (e) {
+          e.preventDefault();
+          adicionarLinhaItem();
+        });
+      }
+    });
+
+
+
+    function recalcularTotais() {
+      const linhas = document.querySelectorAll('tbody tr');
+      let totalGeral = 0;
+
+      linhas.forEach(linha => {
+        const qtdInput = linha.querySelector('input[id$="-quantidade"]');
+        const precoInput = linha.querySelector('input[id$="-preco_unitario"]');
+        const totalInput = linha.querySelector('input[id$="-total"]');
+
+        if (!qtdInput || !precoInput || !totalInput) return;
+
+        const qtd = parseNumero(qtdInput.value);
+        const preco = parseNumero(precoInput.value);
+        const total = qtd * preco;
+
+        if (total > 0) {
+          totalInput.value = formatarMoeda(total);
+        } else {
+          totalInput.value = '';
+        }
+
+        totalGeral += total;
+      });
+
+      const spanTotalGeral = document.getElementById('total-geral');
+      if (spanTotalGeral) {
+        spanTotalGeral.textContent = formatarMoeda(totalGeral);
+      }
+    }
+
+    function atualizarNumeracaoLinhas() {
+      const linhas = document.querySelectorAll('tbody tr');
+      let contador = 1;
+
+      linhas.forEach(linha => {
+        // só considera linhas visíveis
+        if (linha.style.display === 'none') {
+          return;
+        }
+
+        const idxCell = linha.querySelector('.col-idx');
+        if (idxCell) {
+          idxCell.textContent = contador++;
+        }
+      });
+    }
+
+
+    function limparLinha(linha) {
+      linha.querySelectorAll('input').forEach(input => {
+        // só inputs dentro da tabela; management_form fica fora
+        input.value = '';
+      });
+      linha.querySelectorAll('select').forEach(select => {
+        select.selectedIndex = 0;
+      });
+    }
+
+    function atualizarLinhaTipo(linha) {
+      const tipoSelect = linha.querySelector('select[id$="-tipo_item"]');
+      const produtoSelect = linha.querySelector('select[id$="-produto"]');
+      const servicoSelect = linha.querySelector('select[id$="-servico"]');
+
+      if (!tipoSelect) return;
+      const tipo = tipoSelect.value;
+
+      if (tipo === 'PRODUTO') {
+        if (produtoSelect) {
+          produtoSelect.disabled = false;
+          produtoSelect.closest('td').classList.remove('table-secondary');
+        }
+        if (servicoSelect) {
+          servicoSelect.value = '';
+          servicoSelect.disabled = true;
+          servicoSelect.closest('td').classList.add('table-secondary');
+        }
+      } else if (tipo === 'SERVICO') {
+        if (servicoSelect) {
+          servicoSelect.disabled = false;
+          servicoSelect.closest('td').classList.remove('table-secondary');
+        }
+        if (produtoSelect) {
+          produtoSelect.value = '';
+          produtoSelect.disabled = true;
+          produtoSelect.closest('td').classList.add('table-secondary');
+        }
+      } else {
+        // nenhum selecionado
+        if (produtoSelect) {
+          produtoSelect.disabled = false;
+          produtoSelect.closest('td').classList.remove('table-secondary');
+        }
+        if (servicoSelect) {
+          servicoSelect.disabled = false;
+          servicoSelect.closest('td').classList.remove('table-secondary');
+        }
+      }
+    }
+
+    function configurarEventosItens() {
+      const linhas = document.querySelectorAll('tbody tr');
+
+      linhas.forEach(linha => {
+        const qtdInput = linha.querySelector('input[id$="-quantidade"]');
+        const precoInput = linha.querySelector('input[id$="-preco_unitario"]');
+        const tipoSelect = linha.querySelector('select[id$="-tipo_item"]');
+        const btnRemover = linha.querySelector('.btn-remover-item');
+
+        if (qtdInput) {
+          qtdInput.addEventListener('input', recalcularTotais);
+        }
+        if (precoInput) {
+          precoInput.addEventListener('input', recalcularTotais);
+        }
+        if (tipoSelect) {
+          tipoSelect.addEventListener('change', () => atualizarLinhaTipo(linha));
+        }
+        if (btnRemover) {
+          btnRemover.onclick = function () {
+            limparLinha(linha);          // limpa inputs
+            linha.style.display = 'none'; // esconde
+            recalcularTotais();
+            atualizarNumeracaoLinhas();  // 👈 renumera visíveis
+          };
+        }
+
+        atualizarLinhaTipo(linha);
+      });
+
+      atualizarNumeracaoLinhas();        // 👈 renumera ao configurar
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      configurarEventosItens();
+      recalcularTotais();
+
+      const btnAdd = document.getElementById('btn-add-item');
+      if (btnAdd) {
+        btnAdd.addEventListener('click', function (e) {
+          e.preventDefault();
+          adicionarLinhaItem();
+        });
+      }
+    });
+
+  </script>
+
+</form>
+{% endblock %}

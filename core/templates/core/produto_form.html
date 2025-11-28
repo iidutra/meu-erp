@@ -1,0 +1,45 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Produto{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-3">Produto</h1>
+
+<form method="post" class="card p-3">
+  {% csrf_token %}
+
+  <div class="mb-3">
+    {{ form.nome.label_tag }}
+    {{ form.nome }}
+  </div>
+  <div class="mb-3">
+    {{ form.descricao.label_tag }}
+    {{ form.descricao }}
+  </div>
+  <div class="row mb-3">
+    <div class="col-md-4">
+      {{ form.preco_venda.label_tag }}
+      {{ form.preco_venda }}
+    </div>
+    <div class="col-md-4">
+      <div class="form-check mt-4">
+        {{ form.controla_estoque }}
+        {{ form.controla_estoque.label_tag }}
+      </div>
+    </div>
+    <div class="col-md-4">
+      {{ form.estoque_atual.label_tag }}
+      {{ form.estoque_atual }}
+    </div>
+  </div>
+  <div class="mb-3">
+    <div class="form-check">
+      {{ form.ativo }}
+      {{ form.ativo.label_tag }}
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn-primary">Salvar</button>
+  <a href="{% url 'core:produto_list' %}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

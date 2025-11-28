@@ -1,0 +1,183 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Orçamento #{{ orcamento.id }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <div>
+    <h1 class="h3 mb-1">Orçamento #{{ orcamento.id }}</h1>
+    <span class="badge bg-secondary">{{ orcamento.get_status_display }}</span>
+  </div>
+
+  <div class="d-flex flex-wrap gap-2 justify-content-end">
+
+    <!-- Voltar / Novo -->
+    <a href="{% url 'core:orcamento_list' %}" class="btn btn-sm btn-outline-secondary">Voltar</a>
+    <a href="{% url 'core:orcamento_create' %}" class="btn btn-sm btn-outline-primary">Novo orçamento</a>
+
+    <!-- Duplicar -->
+    <form method="post" action="{% url 'core:orcamento_duplicar' orcamento.pk %}">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-sm btn-outline-secondary">
+        Duplicar
+      </button>
+    </form>
+
+    <!-- Status: Enviar -->
+    <form method="post" action="{% url 'core:orcamento_set_status' orcamento.pk %}" class="d-inline">
+      {% csrf_token %}
+      <input type="hidden" name="status" value="ENVIADO">
+      <button type="submit"
+              class="btn btn-sm btn-outline-primary"
+              {% if orcamento.status == 'ENVIADO' %}disabled{% endif %}>
+        Marcar como enviado
+      </button>
+    </form>
+
+    <!-- Status: Aprovar -->
+    <form method="post" action="{% url 'core:orcamento_set_status' orcamento.pk %}" class="d-inline">
+      {% csrf_token %}
+      <input type="hidden" name="status" value="APROVADO">
+      <button type="submit"
+              class="btn btn-sm btn-success"
+              {% if orcamento.status == 'APROVADO' %}disabled{% endif %}>
+        Aprovar
+      </button>
+    </form>
+
+    <!-- Status: Recusar -->
+    <form method="post" action="{% url 'core:orcamento_set_status' orcamento.pk %}" class="d-inline">
+      {% csrf_token %}
+      <input type="hidden" name="status" value="RECUSADO">
+      <button type="submit"
+              class="btn btn-sm btn-danger"
+              {% if orcamento.status == 'RECUSADO' %}disabled{% endif %}>
+        Recusar
+      </button>
+    </form>
+
+    <!-- Status: Voltar p/ rascunho -->
+    <form method="post" action="{% url 'core:orcamento_set_status' orcamento.pk %}" class="d-inline">
+      {% csrf_token %}
+      <input type="hidden" name="status" value="RASCUNHO">
+      <button type="submit"
+              class="btn btn-sm btn-outline-secondary"
+              {% if orcamento.status == 'RASCUNHO' %}disabled{% endif %}>
+        Voltar p/ rascunho
+      </button>
+    </form>
+
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <h5 class="card-title">Dados do orçamento</h5>
+    <div class="row">
+      <div class="col-md-4">
+        <strong>Empresa:</strong> {{ orcamento.empresa.nome_fantasia }}
+      </div>
+      <div class="col-md-4">
+        <strong>Cliente:</strong> {{ orcamento.cliente.nome }}
+      </div>
+      <div class="col-md-2">
+        <strong>Status:</strong> {{ orcamento.get_status_display }}
+      </div>
+      <div class="col-md-2">
+        <strong>Validade:</strong> {{ orcamento.validade|date:"d/m/Y" }}
+      </div>
+    </div>
+    <div class="row mt-2">
+      {% if orcamento.empresa.ramo == 'AUTO' %}
+      <div class="col-md-3">
+        <strong>Placa:</strong> {{ orcamento.placa|default:"—" }}
+      </div>
+      <div class="col-md-9">
+        <strong>Veículo:</strong> {{ orcamento.veiculo_descricao|default:"—" }}
+      </div>
+      {% endif %}
+    </div>
+    {% if orcamento.observacoes %}
+    <div class="mt-2">
+      <strong>Observações:</strong><br>
+      {{ orcamento.observacoes|linebreaks }}
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <h5 class="card-title">Itens</h5>
+    <div class="table-responsive">
+      <table class="table table-sm">
+        <thead class="table-light">
+          <tr>
+            <th>#</th>
+            <th>Tipo</th>
+            <th>Produto / Serviço</th>
+            <th>Descrição</th>
+            <th class="text-end">Qtd</th>
+            <th class="text-end">Preço unit.</th>
+            <th class="text-end">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in orcamento.itens.all %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ item.get_tipo_item_display }}</td>
+            <td>
+              {% if item.tipo_item == 'PRODUTO' %}
+              {{ item.produto }}
+              {% elif item.tipo_item == 'SERVICO' %}
+              {{ item.servico }}
+              {% endif %}
+            </td>
+            <td>{{ item.descricao }}</td>
+            <td class="text-end">{{ item.quantidade }}</td>
+            <td class="text-end">{{ item.preco_unitario }}</td>
+            <td class="text-end">{{ item.total }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="text-center">Nenhum item.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr>
+            <th colspan="6" class="text-end">Total</th>
+            <th class="text-end">{{ orcamento.total }}</th>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body d-flex justify-content-between align-items-center">
+    <div>
+      <strong>Total:</strong> R$ {{ orcamento.total }}
+    </div>
+    <div>
+      <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'core:orcamento_print' orcamento.pk %}" class="btn btn-outline-secondary">
+          Versão para impressão
+      </a>
+      <form method="post" action="{% url 'core:orcamento_converter' orcamento.pk %}" class="d-inline">
+        {% csrf_token %}
+        <input type="hidden" name="tipo" value="VENDA">
+        <button type="submit" class="btn btn-success">Converter em Venda</button>
+      </form>
+
+      <form method="post" action="{% url 'core:orcamento_converter' orcamento.pk %}" class="d-inline ms-2">
+        {% csrf_token %}
+        <input type="hidden" name="tipo" value="OS">
+        <button type="submit" class="btn btn-outline-primary">Converter em Ordem de Serviço</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

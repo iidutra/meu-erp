@@ -1,0 +1,79 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Orçamentos{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Orçamentos</h1>
+    <a href="{% url 'core:orcamento_create' %}" class="btn btn-primary">Novo orçamento</a>
+</div>
+
+<form method="get" class="card mb-3 p-3">
+    <div class="row g-2 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label">
+                {% if request.user.perfil.empresa.ramo == 'AUTO' %}
+                Cliente / placa / texto
+                {% else %}
+                Cliente / texto
+                {% endif %}
+            </label>
+            <input type="text" name="q" class="form-control" value="{{ filtro_q }}">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-select">
+                <option value="">Todos</option>
+                <option value="RASCUNHO" {% if filtro_status == 'RASCUNHO' %}selected{% endif %}>Rascunho</option>
+                <option value="ENVIADO" {% if filtro_status == 'ENVIADO' %}selected{% endif %}>Enviado</option>
+                <option value="APROVADO" {% if filtro_status == 'APROVADO' %}selected{% endif %}>Aprovado</option>
+                <option value="RECUSADO" {% if filtro_status == 'RECUSADO' %}selected{% endif %}>Recusado</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Data inicial</label>
+            <input type="date" name="data_ini" class="form-control" value="{{ filtro_data_ini }}">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Data final</label>
+            <input type="date" name="data_fim" class="form-control" value="{{ filtro_data_fim }}">
+        </div>
+        <div class="col-md-2 text-end">
+            <button type="submit" class="btn btn-primary w-100 mb-1">Filtrar</button>
+            <a href="{% url 'core:orcamento_list' %}" class="btn btn-outline-secondary w-100 btn-sm">Limpar</a>
+        </div>
+    </div>
+</form>
+<table class="table table-striped table-hover">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Empresa</th>
+            <th>Cliente</th>
+            <th>Data</th>
+            <th>Status</th>
+            <th>Total</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for o in orcamentos %}
+        <tr>
+            <td>
+                <a href="{% url 'core:orcamento_detail' o.pk %}">
+                    Orçamento #{{ o.id }}
+                </a>
+            </td>
+            <td>{{ o.empresa.nome_fantasia }}</td>
+            <td>{{ o.cliente.nome }}</td>
+            <td>{{ o.data|date:"d/m/Y H:i" }}</td>
+            <td>{{ o.get_status_display }}</td>
+            <td>R$ {{ o.total }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="6" class="text-center">Nenhum orçamento cadastrado.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

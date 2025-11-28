@@ -1,0 +1,39 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Serviço{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-3">Serviço</h1>
+
+<form method="post" class="card p-3">
+  {% csrf_token %}
+
+  <div class="mb-3">
+    {{ form.nome.label_tag }}
+    {{ form.nome }}
+  </div>
+  <div class="mb-3">
+    {{ form.descricao.label_tag }}
+    {{ form.descricao }}
+  </div>
+  <div class="row mb-3">
+    <div class="col-md-4">
+      {{ form.preco.label_tag }}
+      {{ form.preco }}
+    </div>
+    <div class="col-md-4">
+      {{ form.duracao_minutos.label_tag }}
+      {{ form.duracao_minutos }}
+    </div>
+    <div class="col-md-4">
+      <div class="form-check mt-4">
+        {{ form.ativo }}
+        {{ form.ativo.label_tag }}
+      </div>
+    </div>
+  </div>
+
+  <button type="submit" class="btn btn-primary">Salvar</button>
+  <a href="{% url 'core:servico_list' %}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

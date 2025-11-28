@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.sqlite3
+*.log
+
+# Django stuff
+/staticfiles/
+media/
+local_settings.py
+
+# Virtualenv
+venv/
+.env
+*.env
+
+# IDEs / Editor
+.vscode/
+.idea/
+*.iml
+
+# Sistema / OS
+.DS_Store
+Thumbs.db
+
+# OneDrive lixo eventual
+~$*

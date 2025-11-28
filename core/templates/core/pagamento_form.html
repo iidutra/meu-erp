@@ -1,0 +1,29 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Pagamento - {{ documento.get_tipo_display }} #{{ documento.id }}{% endblock %}
+
+{% block content %}
+<h1 class="mb-3">Registrar pagamento</h1>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <p>
+      <strong>Documento:</strong> {{ documento.get_tipo_display }} #{{ documento.id }}<br>
+      <strong>Cliente:</strong> {{ documento.cliente.nome }}<br>
+      <strong>Total:</strong> R$ {{ documento.total }}<br>
+      <strong>Pago:</strong> R$ {{ documento.valor_pago }}<br>
+      <strong>Saldo:</strong> R$ {{ documento.saldo }}
+    </p>
+  </div>
+</div>
+
+<form method="post" class="card p-3">
+  {% csrf_token %}
+  {{ form.as_p }}
+
+  <div class="mt-3">
+    <button type="submit" class="btn btn-primary">Salvar pagamento</button>
+    <a href="{% url 'core:documento_detail' documento.pk %}" class="btn btn-secondary">Cancelar</a>
+  </div>
+</form>
+{% endblock %}
