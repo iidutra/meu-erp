@@ -51,6 +51,16 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# Diz pro Django que está atrás de um proxy que termina HTTPS (Railway)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Domínios confiáveis para CSRF em produção
+CSRF_TRUSTED_ORIGINS = os.environ.get(
+    'DJANGO_CSRF_TRUSTED_ORIGINS',
+    ''
+).split(',') if os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS') else []
+
+
 ROOT_URLCONF = 'meu_erp.urls'
 
 TEMPLATES = [
